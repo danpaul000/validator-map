@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solana Network Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Sidebar ──────────────────────────────────── -->
+  <aside id="sidebar">
+
+    <div id="header">
+      <div id="logo">
+        <svg viewBox="0 0 397 312" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="sol-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   style="stop-color:#9945ff"/>
+              <stop offset="50%"  style="stop-color:#14f195"/>
+              <stop offset="100%" style="stop-color:#00c2ff"/>
+            </linearGradient>
+          </defs>
+          <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z" fill="url(#sol-grad)"/>
+          <path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z" fill="url(#sol-grad)"/>
+          <path d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z" fill="url(#sol-grad)"/>
+        </svg>
+        <h1>Solana Network Map</h1>
+      </div>
+      <div id="last-updated">Loading data…</div>
+    </div>
+
+    <!-- Stats -->
+    <div id="stats-panel">
+      <div class="stat-card">
+        <span class="stat-label">Total Nodes</span>
+        <span class="stat-value" id="stat-total">—</span>
+      </div>
+      <div class="stat-card green">
+        <span class="stat-label">Validators</span>
+        <span class="stat-value" id="stat-validators">—</span>
+      </div>
+      <div class="stat-card purple">
+        <span class="stat-label">RPC Nodes</span>
+        <span class="stat-value" id="stat-rpc">—</span>
+      </div>
+      <div class="stat-card red">
+        <span class="stat-label">Delinquent</span>
+        <span class="stat-value" id="stat-delinquent">—</span>
+      </div>
+    </div>
+
+    <!-- Node Filter -->
+    <div id="filters">
+      <span class="filter-label">Filter</span>
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-filter="all">All Nodes</button>
+        <button class="filter-btn" data-filter="validators">Validators</button>
+        <button class="filter-btn" data-filter="rpc">RPC Only</button>
+      </div>
+    </div>
+
+    <!-- Stake Pool Overlay -->
+    <div id="stakepool-panel">
+      <div class="section-title">Stake Pool Overlay
+        <span id="stakepool-loading" class="loading-badge">loading…</span>
+      </div>
+      <div id="stakepool-buttons">
+        <button class="pool-btn active" data-pool="off">Off</button>
+        <!-- Pool buttons injected by JS once data loads -->
+      </div>
+      <div id="stakepool-legend" class="hidden">
+        <!-- Scale legend: small/large circles -->
+        <div class="pool-legend-row">
+          <svg width="60" height="20">
+            <circle cx="8"  cy="10" r="4"  fill="currentColor" opacity="0.6"/>
+            <circle cx="40" cy="10" r="10" fill="currentColor" opacity="0.6"/>
+          </svg>
+          <span>= stake size (log scale)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div id="legend">
+      <div class="section-title">Legend</div>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#14f195;box-shadow:0 0 5px #14f19588"></div>
+          <span>Active Validator</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ff6b6b;box-shadow:0 0 5px #ff6b6b88"></div>
+          <span>Delinquent Validator</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#9945ff;box-shadow:0 0 5px #9945ff88"></div>
+          <span>RPC Node</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#8b949e"></div>
+          <span>Other Node</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Countries -->
+    <div id="countries-panel">
+      <div class="section-title">Top Countries</div>
+      <div id="countries-list"></div>
+    </div>
+
+    <!-- Version Distribution -->
+    <div id="versions-panel">
+      <div class="section-title">Client Versions</div>
+      <div id="versions-list"></div>
+    </div>
+
+  </aside>
+
+  <!-- ── Map ──────────────────────────────────────── -->
+  <div id="map"></div>
+
+  <!-- ── Node Detail Panel ────────────────────────── -->
+  <div id="node-detail" class="hidden">
+    <div id="node-detail-header">
+      <div id="node-detail-title">
+        <div id="node-detail-icon-wrap"></div>
+        <div id="node-detail-name-wrap">
+          <h3 id="node-detail-name">Node Details</h3>
+          <a id="node-detail-website" href="#" target="_blank" rel="noopener" class="hidden">Visit website ↗</a>
+        </div>
+      </div>
+      <button id="node-detail-close" title="Close">✕</button>
+    </div>
+    <div id="node-detail-content"></div>
+  </div>
+
+  <!-- ── Loading Overlay ──────────────────────────── -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text">Fetching Solana network data…</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
